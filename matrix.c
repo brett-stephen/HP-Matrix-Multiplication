@@ -141,9 +141,9 @@ void r8_mxm ( int l, int m, int n )
   int i;
   int j;
   int k;
-  int ii;
-  int jj;
-  int kk;
+  int K_;
+  int I_;
+  int J_;
   int temp;
   int ops;
   double rate;
@@ -199,19 +199,19 @@ void r8_mxm ( int l, int m, int n )
 omp_set_num_threads(num_threads);
 # pragma omp parallel \
   shared ( a, b, c, l, m, n ) \
-  private ( i, j, k, ii, jj, kk, temp)
+  private ( i, j, k, K_, I_, J_, temp)
 
 # pragma omp for
-  for(jj=0;jj<n;jj+= s)
+  for(I_=0;I_<n;I_+= s)
   {
-    for(kk=0;kk<n;kk+= s)
+    for(J_=0;J_<n;J_+= s)
     {
         for(i=0;i<n;i++)
         {
-            for(j = jj; j<((jj+s)>n?n:(jj+s)); j++)
+            for(j = I_; j<((I_+s)>n?n:(I_+s)); j++)
             {
                 temp = 0;
-                for(k = kk; k<((kk+s)>n?n:(kk+s)); k++){
+                for(k = J_; k<((J_+s)>n?n:(J_+s)); k++){
                         temp += a[i][k] * b[k][j];
                 }
                 c[i][j] += temp;
