@@ -2,18 +2,21 @@
 # include <stdio.h>
 # include <math.h>
 # include <omp.h>
+# include <getopt.h>
 
 int main ( int argc, char *argv[] );
 void r8_mxm ( int l, int m, int n );
 double r8_uniform_01 ( int *seed );
 
+int dimension_size = 1024; //Default: smallest size for test eval
+int num_threads = 1; //Default: serial execution
 
 /* Please modify for GPU Experiments */
 /* @@@ Shahadat Hossain (SH) March 12, 2018 */
 /******************************************************************************/
 
-int main ( int argc, char *argv[] )
 
+int main ( int argc, char **argv )
 /******************************************************************************/
 /*
   Purpose:
@@ -32,6 +35,33 @@ int main ( int argc, char *argv[] )
 
  */
 {
+  char opt;
+
+  while((opt = getopt(argc, argv, "n:t:")) != -1)
+  {
+    switch (opt)
+    {
+    case 'n':
+      dimension_size = atoi(optarg);
+      break;
+    case 't':
+      num_threads = atoi(optarg);
+      break;
+    default:
+      printf("Nothing was passed.");
+    }
+  }
+
+  if (num_threads <= 0)
+  {
+    num_threads = 1; //default to 1
+  }
+  if (dimension_size%2 !=0)
+  {
+    dimension_size = 1024; //default to smallest eval sz
+  }
+  
+
   int id;
   int l;
   int m;
@@ -51,6 +81,8 @@ int main ( int argc, char *argv[] )
   printf ( "\n" );
   printf ( "  Number of processors available = %d\n", omp_get_num_procs ( ) );
   printf ( "  Number of threads =              %d\n", omp_get_max_threads ( ) );
+  printf ( "  Matrix dimension size =          %dx%d\n", dimension_size, dimension_size );
+  printf ( "  Chosen number of threads =       %d\n", num_threads );
 
 /*  
     @@@ SH Note 1b: 
@@ -58,9 +90,9 @@ int main ( int argc, char *argv[] )
      These values need to be read in from command line. Assume that 
      l = m = n. 
 */
-  l = 512; //4096
-  m = 512;
-  n = 512;
+  l = dimension_size;
+  m = dimension_size;
+  n = dimension_size;
 
   r8_mxm( l, m, n ); // call the matrix multiplication routine
 
@@ -162,29 +194,14 @@ void r8_mxm ( int l, int m, int n )
        maximum sequential and parallel performance. 
 */ 
 
-printf ( "START OF MxM with parameters %d %d %d \n", l,m,n );
   time_begin = omp_get_wtime ( );
 
+omp_set_num_threads(num_threads);
 # pragma omp parallel \
   shared ( a, b, c, l, m, n ) \
   private ( i, j, k, ii, jj, kk, temp)
 
 # pragma omp for
-/*
-  for ( i = 0; i < l; i++)
-  {
-    for ( j = 0; j < n; j++ )
-    {
-      a[i][j] = 0.0;
-      for ( k = 0; k < m; k++ )
-      {
-        a[i][j] = a[i][j] + b[i][k] * c[k][j];
-      }
-
-      printf ( "a[%d][%d] = %d \n", i,j, a[i][j] );
-    }
-  }
-  */
   for(jj=0;jj<n;jj+= s)
   {
     for(kk=0;kk<n;kk+= s)
@@ -204,7 +221,6 @@ printf ( "START OF MxM with parameters %d %d %d \n", l,m,n );
   }
 
   time_stop = omp_get_wtime ( );
-  printf ( "END OF MxM\n" );
 /*
   Generate Report.
 
