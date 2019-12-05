@@ -212,9 +212,9 @@ omp_set_num_threads(num_threads);
             {
                 temp = 0;
                 for(k = J_; k<((J_+s)>n?n:(J_+s)); k++){
-                        temp += a[i][k] * b[k][j];
+                        temp += b[i][k] * c[k][j];
                 }
-                c[i][j] += temp;
+                a[i][j] += temp;
             }
         }
     }
